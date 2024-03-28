@@ -457,7 +457,7 @@ func (k Keeper) CanUpdateSubaccountsUint256(
 	}
 
 	allPerps := k.perpetualsKeeper.GetAllPerpetuals(ctx)
-	success, successPerUpdate, err = k.internalCanUpdateSubaccounts(ctx, settledUpdates, updateType, allPerps)
+	success, successPerUpdate, err = k.internalCanUpdateSubaccountsUint256(ctx, settledUpdates, updateType, allPerps)
 	return success, successPerUpdate, err
 }
 
