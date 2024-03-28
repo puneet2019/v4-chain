@@ -11,6 +11,7 @@ import (
 	perpetualsmoduletypes "github.com/dydxprotocol/v4-chain/protocol/x/perpetuals/types"
 	pricestypes "github.com/dydxprotocol/v4-chain/protocol/x/prices/types"
 	satypes "github.com/dydxprotocol/v4-chain/protocol/x/subaccounts/types"
+	"github.com/holiman/uint256"
 )
 
 type SubaccountsKeeper interface {
@@ -39,6 +40,15 @@ type SubaccountsKeeper interface {
 		bigNetCollateral *big.Int,
 		bigInitialMargin *big.Int,
 		bigMaintenanceMargin *big.Int,
+		err error,
+	)
+	GetNetCollateralAndMarginRequirementsUint256(
+		ctx sdk.Context,
+		update satypes.Update,
+	) (
+		bigNetCollateral *uint256.Int,
+		bigInitialMargin *uint256.Int,
+		bigMaintenanceMargin *uint256.Int,
 		err error,
 	)
 	GetSubaccount(

@@ -9,6 +9,7 @@ import (
 	"github.com/dydxprotocol/v4-chain/protocol/lib"
 	"github.com/dydxprotocol/v4-chain/protocol/x/clob/types"
 	satypes "github.com/dydxprotocol/v4-chain/protocol/x/subaccounts/types"
+	"github.com/holiman/uint256"
 )
 
 // GetEquityTierLimitConfiguration gets the equity tier limit configuration from state.
@@ -63,7 +64,7 @@ func (k Keeper) getEquityTierLimitForSubaccount(
 	ctx sdk.Context, subaccountId satypes.SubaccountId,
 	equityTierLimits []types.EquityTierLimit,
 ) (equityTier types.EquityTierLimit, bigNetCollateral *big.Int, err error) {
-	netCollateral, _, _, err := k.subaccountsKeeper.GetNetCollateralAndMarginRequirements(
+	netCollateral, _, _, err := k.subaccountsKeeper.GetNetCollateralAndMarginRequirementsUint256(
 		ctx,
 		satypes.Update{
 			SubaccountId: subaccountId,
@@ -75,7 +76,7 @@ func (k Keeper) getEquityTierLimitForSubaccount(
 
 	var equityTierLimit types.EquityTierLimit
 	for _, limit := range equityTierLimits {
-		if netCollateral.Cmp(limit.UsdTncRequired.BigInt()) < 0 {
+		if netCollateral.Cmp(uint256.MustFromBig(limit.UsdTncRequired.BigInt())) < 0 {
 			break
 		}
 		equityTierLimit = limit
