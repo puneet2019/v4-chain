@@ -110,6 +110,11 @@ func MulPpmUint256(input *uint256.Int, ppm uint32) *uint256.Int {
 	return result.Div(result, OneMillionUint256)
 }
 
+func MulPpmRoundUpUint256(input *uint256.Int, ppm uint32) *uint256.Int {
+	result := new(uint256.Int).Mul(input, uint256.NewInt(uint64(ppm)))
+	return DivRound(result, result, OneMillionUint256, true)
+}
+
 // bigGenericClamp is a helper function for BigRatClamp and BigIntClamp
 // takes an input, upper bound, and lower bound. It returns the result
 // bounded within the upper and lower bound, inclusive.
@@ -300,6 +305,7 @@ func BigRatRoundToNearestMultiple(
 }
 
 var Exp10Lookup = createExp10Lookup()
+var one = uint256.NewInt(1)
 var ten = uint256.NewInt(10)
 
 func createExp10Lookup() map[uint64]uint256.Int {
@@ -332,4 +338,12 @@ func MulExp10(result *uint256.Int, base *uint256.Int, exponent int64) *uint256.I
 	} else {
 		return result.Mul(base, exp10)
 	}
+}
+
+func DivRound(result *uint256.Int, dividend *uint256.Int, divisor *uint256.Int, roundUp bool) *uint256.Int {
+	result, remainder := result.DivMod(dividend, divisor, new(uint256.Int))
+	if !remainder.IsZero() && roundUp {
+		result.Add(result, one)
+	}
+	return result
 }

@@ -198,65 +198,25 @@ func (liquidityTier LiquidityTier) GetInitialMarginQuoteQuantumsUint256(
 	// Or if `current_interest` <= `open_interest_lower_cap`, IMF is not scaled.
 	// In both cases, use base IMF as OIMF.
 	openInterestLowerCap := uint256.NewInt(liquidityTier.OpenInterestLowerCap)
+	baseImr := lib.MulPpmRoundUpUint256(quoteQuantums, liquidityTier.InitialMarginPpm)
 	if liquidityTier.OpenInterestUpperCap == 0 || openInterestQuoteQuantums.Cmp(
 		openInterestLowerCap,
 	) <= 0 {
 		// Calculate base IMR: multiply `bigQuoteQuantums` with `initialMarginPpm` and divide by 1 million.
-		return lib.MulPpmUint256(quoteQuantums, liquidityTier.InitialMarginPpm)
+		return baseImr
 	}
 
 	// If `open_interest_lower_cap` < `open_interest` <= `open_interest_upper_cap`, calculate the scaled OIMF.
 	// `Scaling Factor = (Open Notional - Lower Cap) / (Upper Cap - Lower Cap)`
-	scalingFactor := new(uint256.Int).Div(
-		new(uint256.Int).Sub(
-			openInterestQuoteQuantums, // reuse pointer for memory efficiency
-			openInterestLowerCap,
-		),
-		openInterestLowerCap.Sub(
-			openInterestUpperCap, // reuse pointer for memory efficiency
-			openInterestLowerCap,
-		),
-	)
-
-	// `IMF Increase = Scaling Factor * (1 - Base IMF)`
-	imfIncrease := lib.MulPpmUint256(
-		scalingFactor,
-		lib.OneMillion-liquidityTier.InitialMarginPpm, // >= 0, since we check in `liquidityTier.Validate()`
-	)
-
-	// Calculate `Max(IMF Increase, 0)`.
-	if imfIncrease.Sign() < 0 {
-		panic(
-			fmt.Sprintf(
-				"GetInitialMarginQuoteQuantums: IMF Increase is negative (%s), liquidityTier: %+v, openInterestQuoteQuantums: %s",
-				imfIncrease.String(),
-				liquidityTier,
-				openInterestQuoteQuantums.String(),
-			),
-		)
-	}
-
-	// First, calculate base IMF in big.Rat
-	baseImf := new(uint256.Int).Div(
-		uint256.NewInt(uint64(liquidityTier.InitialMarginPpm)), // safe, since `InitialMargin` is uint32
-		uint256.NewInt(uint64(lib.OneMillion)),
-	)
-
-	// `Effective IMF = Min(Base IMF + Max(IMF Increase, 0), 1.0)`
-	effectiveImf := baseImf.Add(
-		baseImf, // reuse pointer for memory efficiency
-		imfIncrease,
-	)
-
-	// `Effective IMR = Effective IMF * Quote Quantums`
-	effectiveImf.Mul(
-		effectiveImf, // reuse pointer for memory efficiency
-		quoteQuantums,
-	)
+	additionalImr := new(uint256.Int)
+	additionalImr.Mul(quoteQuantums, additionalImr.Sub(openInterestQuoteQuantums, openInterestLowerCap))
+	lib.DivRound(additionalImr, additionalImr, openInterestLowerCap.Sub(openInterestUpperCap, openInterestLowerCap), true)
+	additionalImr = lib.MulPpmRoundUpUint256(additionalImr, lib.OneMillion-liquidityTier.InitialMarginPpm)
+	additionalImr = additionalImr.Add(baseImr, additionalImr)
 
 	// Return min(Effective IMR, Quote Quantums)
-	if effectiveImf.Cmp(quoteQuantums) >= 0 {
+	if additionalImr.Cmp(quoteQuantums) >= 0 {
 		return quoteQuantums
 	}
-	return effectiveImf
+	return additionalImr
 }
