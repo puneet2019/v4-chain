@@ -78,6 +78,15 @@ type SubaccountsKeeper interface {
 		successPerUpdate []satypes.UpdateResult,
 		err error,
 	)
+	UpdateSubaccountsInt256(
+		ctx sdk.Context,
+		updates []satypes.Update,
+		updateType satypes.UpdateType,
+	) (
+		success bool,
+		successPerUpdate []satypes.UpdateResult,
+		err error,
+	)
 	SetNegativeTncSubaccountSeenAtBlock(
 		ctx sdk.Context,
 		perpetualId uint32,

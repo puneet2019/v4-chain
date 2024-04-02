@@ -861,9 +861,9 @@ func (k Keeper) GetNetNotional(
 func (k Keeper) GetNetNotionalInt256(
 	ctx sdk.Context,
 	id uint32,
-	bigQuantums *int256.Int,
+	quantums *int256.Int,
 ) (
-	bigNetNotionalQuoteQuantums *int256.Int,
+	netNotionalQuoteQuantums *int256.Int,
 	err error,
 ) {
 	if rand.Float64() < metrics.LatencyMetricSampleRate {
@@ -885,7 +885,7 @@ func (k Keeper) GetNetNotionalInt256(
 		return new(int256.Int), err
 	}
 
-	return GetNetNotionalInQuoteQuantumsInt256(perpetual, marketPrice, bigQuantums), nil
+	return GetNetNotionalInQuoteQuantumsInt256(perpetual, marketPrice, quantums), nil
 }
 
 // GetNetNotionalInQuoteQuantums returns the net notional in quote quantums, which can be
@@ -1055,10 +1055,10 @@ func (k Keeper) GetMarginRequirements(
 func (k Keeper) GetMarginRequirementsInt256(
 	ctx sdk.Context,
 	id uint32,
-	bigQuantums *int256.Int,
+	quantums *int256.Int,
 ) (
-	bigInitialMarginQuoteQuantums *int256.Int,
-	bigMaintenanceMarginQuoteQuantums *int256.Int,
+	initialMarginQuoteQuantums *int256.Int,
+	maintenanceMarginQuoteQuantums *int256.Int,
 	err error,
 ) {
 	if rand.Float64() < metrics.LatencyMetricSampleRate {
@@ -1086,14 +1086,14 @@ func (k Keeper) GetMarginRequirementsInt256(
 		return nil, nil, err
 	}
 
-	bigInitialMarginQuoteQuantums,
-		bigMaintenanceMarginQuoteQuantums = GetMarginRequirementsInQuoteQuantumsInt256(
+	initialMarginQuoteQuantums,
+		maintenanceMarginQuoteQuantums = GetMarginRequirementsInQuoteQuantumsInt256(
 		perpetual,
 		marketPrice,
 		liquidityTier,
-		bigQuantums,
+		quantums,
 	)
-	return bigInitialMarginQuoteQuantums, bigMaintenanceMarginQuoteQuantums, nil
+	return initialMarginQuoteQuantums, maintenanceMarginQuoteQuantums, nil
 }
 
 // GetMarginRequirementsInQuoteQuantums returns initial and maintenance margin requirements

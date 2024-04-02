@@ -1293,9 +1293,9 @@ func (k Keeper) GetNetCollateralAndMarginRequirementsInt256(
 	ctx sdk.Context,
 	update types.Update,
 ) (
-	bigNetCollateral *int256.Int,
-	bigInitialMargin *int256.Int,
-	bigMaintenanceMargin *int256.Int,
+	netCollateral *int256.Int,
+	initialMargin *int256.Int,
+	maintenanceMargin *int256.Int,
 	err error,
 ) {
 	subaccount := k.GetSubaccount(ctx, update.SubaccountId)
