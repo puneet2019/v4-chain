@@ -4,8 +4,8 @@ import (
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/dydxprotocol/v4-chain/protocol/lib/int256"
 	pricestypes "github.com/dydxprotocol/v4-chain/protocol/x/prices/types"
-	"github.com/holiman/uint256"
 )
 
 // GetPricePremiumParams includes the parameters used by
@@ -135,9 +135,9 @@ type OpenInterestDelta struct {
 }
 
 // OpenInterestDelta represents a (perpId, openInterestDelta) tuple.
-type OpenInterestDeltaUint256 struct {
+type OpenInterestDeltaInt256 struct {
 	// The `Id` of the `Perpetual`.
 	PerpetualId uint32
 	// Delta of open interest (in base quantums).
-	BaseQuantums *uint256.Int
+	BaseQuantums *int256.Int
 }

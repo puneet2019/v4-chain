@@ -8,7 +8,6 @@ import (
 	"time"
 
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/holiman/uint256"
 
 	"github.com/cosmos/gogoproto/proto"
 
@@ -22,6 +21,7 @@ import (
 	indexerevents "github.com/dydxprotocol/v4-chain/protocol/indexer/events"
 	indexer_manager "github.com/dydxprotocol/v4-chain/protocol/indexer/indexer_manager"
 	"github.com/dydxprotocol/v4-chain/protocol/lib"
+	"github.com/dydxprotocol/v4-chain/protocol/lib/int256"
 	"github.com/dydxprotocol/v4-chain/protocol/lib/metrics"
 	perpkeeper "github.com/dydxprotocol/v4-chain/protocol/x/perpetuals/keeper"
 	perptypes "github.com/dydxprotocol/v4-chain/protocol/x/perpetuals/types"
@@ -395,7 +395,7 @@ func (k Keeper) UpdateSubaccounts(
 	return success, successPerUpdate, err
 }
 
-func (k Keeper) UpdateSubaccountsUint256(
+func (k Keeper) UpdateSubaccountsInt256(
 	ctx sdk.Context,
 	updates []types.Update,
 	updateType types.UpdateType,
@@ -419,7 +419,7 @@ func (k Keeper) UpdateSubaccountsUint256(
 	}
 
 	allPerps := k.perpetualsKeeper.GetAllPerpetuals(ctx)
-	success, successPerUpdate, err = k.internalCanUpdateSubaccountsUint256(
+	success, successPerUpdate, err = k.internalCanUpdateSubaccountsInt256(
 		ctx,
 		settledUpdates,
 		updateType,
@@ -437,9 +437,9 @@ func (k Keeper) UpdateSubaccountsUint256(
 	}
 
 	// Get OpenInterestDelta from the updates, and persist the OI change if any.
-	perpOpenInterestDelta := GetDeltaOpenInterestFromUpdatesUint256(settledUpdates, updateType)
+	perpOpenInterestDelta := GetDeltaOpenInterestFromUpdatesInt256(settledUpdates, updateType)
 	if perpOpenInterestDelta != nil {
-		if err := k.perpetualsKeeper.ModifyOpenInterestUint256(
+		if err := k.perpetualsKeeper.ModifyOpenInterestInt256(
 			ctx,
 			perpOpenInterestDelta.PerpetualId,
 			perpOpenInterestDelta.BaseQuantums,
@@ -560,7 +560,7 @@ func (k Keeper) CanUpdateSubaccounts(
 	return success, successPerUpdate, err
 }
 
-func (k Keeper) CanUpdateSubaccountsUint256(
+func (k Keeper) CanUpdateSubaccountsInt256(
 	ctx sdk.Context,
 	updates []types.Update,
 	updateType types.UpdateType,
@@ -584,7 +584,7 @@ func (k Keeper) CanUpdateSubaccountsUint256(
 	}
 
 	allPerps := k.perpetualsKeeper.GetAllPerpetuals(ctx)
-	success, successPerUpdate, err = k.internalCanUpdateSubaccountsUint256(ctx, settledUpdates, updateType, allPerps)
+	success, successPerUpdate, err = k.internalCanUpdateSubaccountsInt256(ctx, settledUpdates, updateType, allPerps)
 	return success, successPerUpdate, err
 }
 
@@ -931,7 +931,7 @@ func (k Keeper) internalCanUpdateSubaccounts(
 	return success, successPerUpdate, nil
 }
 
-func (k Keeper) internalCanUpdateSubaccountsUint256(
+func (k Keeper) internalCanUpdateSubaccountsInt256(
 	ctx sdk.Context,
 	settledUpdates []SettledUpdate,
 	updateType types.UpdateType,
@@ -1023,11 +1023,11 @@ func (k Keeper) internalCanUpdateSubaccountsUint256(
 	// Get delta open interest from the updates.
 	// `perpOpenInterestDelta` is nil if the update type is not `Match` or if the updates
 	// do not result in OI changes.
-	perpOpenInterestDelta := GetDeltaOpenInterestFromUpdatesUint256(settledUpdates, updateType)
+	perpOpenInterestDelta := GetDeltaOpenInterestFromUpdatesInt256(settledUpdates, updateType)
 
-	curNetCollateral := make(map[string]*uint256.Int)
-	curInitialMargin := make(map[string]*uint256.Int)
-	curMaintenanceMargin := make(map[string]*uint256.Int)
+	curNetCollateral := make(map[string]*int256.Int)
+	curInitialMargin := make(map[string]*int256.Int)
+	curMaintenanceMargin := make(map[string]*int256.Int)
 
 	// Iterate over all updates.
 	for i, u := range settledUpdates {
@@ -1054,7 +1054,7 @@ func (k Keeper) internalCanUpdateSubaccountsUint256(
 		// Temporily apply open interest delta to perpetuals, so IMF is calculated based on open interest after the update.
 		// `perpOpenInterestDeltas` is only present for `Match` update type.
 		if perpOpenInterestDelta != nil {
-			if err := k.perpetualsKeeper.ModifyOpenInterestUint256(
+			if err := k.perpetualsKeeper.ModifyOpenInterestInt256(
 				branchedContext,
 				perpOpenInterestDelta.PerpetualId,
 				perpOpenInterestDelta.BaseQuantums,
@@ -1073,7 +1073,7 @@ func (k Keeper) internalCanUpdateSubaccountsUint256(
 		newNetCollateral,
 			newInitialMargin,
 			newMaintenanceMargin,
-			err := k.internalGetNetCollateralAndMarginRequirementsUint256(
+			err := k.internalGetNetCollateralAndMarginRequirementsInt256(
 			branchedContext,
 			u,
 		)
@@ -1104,7 +1104,7 @@ func (k Keeper) internalCanUpdateSubaccountsUint256(
 				curNetCollateral[saKey],
 					curInitialMargin[saKey],
 					curMaintenanceMargin[saKey],
-					err = k.internalGetNetCollateralAndMarginRequirementsUint256(
+					err = k.internalGetNetCollateralAndMarginRequirementsInt256(
 					ctx,
 					emptyUpdate,
 				)
@@ -1114,7 +1114,7 @@ func (k Keeper) internalCanUpdateSubaccountsUint256(
 			}
 
 			// Determine whether the state transition is valid.
-			result = IsValidStateTransitionForUndercollateralizedSubaccountUint256(
+			result = IsValidStateTransitionForUndercollateralizedSubaccountInt256(
 				curNetCollateral[saKey],
 				curInitialMargin[saKey],
 				curMaintenanceMargin[saKey],
@@ -1202,12 +1202,12 @@ func IsValidStateTransitionForUndercollateralizedSubaccount(
 	return types.Success
 }
 
-func IsValidStateTransitionForUndercollateralizedSubaccountUint256(
-	curNetCollateral *uint256.Int,
-	curInitialMargin *uint256.Int,
-	curMaintenanceMargin *uint256.Int,
-	newNetCollateral *uint256.Int,
-	newMaintenanceMargin *uint256.Int,
+func IsValidStateTransitionForUndercollateralizedSubaccountInt256(
+	curNetCollateral *int256.Int,
+	curInitialMargin *int256.Int,
+	curMaintenanceMargin *int256.Int,
+	newNetCollateral *int256.Int,
+	newMaintenanceMargin *int256.Int,
 ) types.UpdateResult {
 	// Determine whether the subaccount was previously undercollateralized before the update.
 	var underCollateralizationResult = types.StillUndercollateralized
@@ -1222,9 +1222,9 @@ func IsValidStateTransitionForUndercollateralizedSubaccountUint256(
 
 	// If the maintenance margin is zero, it means the subaccount must have no open positions, and negative net
 	// collateral. If the net collateral is not improving then this transition is not valid.
-	if newMaintenanceMargin.BitLen() == 0 || curMaintenanceMargin.BitLen() == 0 {
-		if newMaintenanceMargin.BitLen() == 0 &&
-			curMaintenanceMargin.BitLen() == 0 &&
+	if newMaintenanceMargin.IsZero() || curMaintenanceMargin.IsZero() {
+		if newMaintenanceMargin.IsZero() &&
+			curMaintenanceMargin.IsZero() &&
 			newNetCollateral.Cmp(curNetCollateral) > 0 {
 			return types.Success
 		}
@@ -1236,8 +1236,8 @@ func IsValidStateTransitionForUndercollateralizedSubaccountUint256(
 	// `newNetCollateral / newMaintenanceMargin >= curNetCollateral / curMaintenanceMargin`.
 	// However, to avoid rounding errors, we factor this as
 	// `newNetCollateral * curMaintenanceMargin >= curNetCollateral * newMaintenanceMargin`.
-	curRisk := new(uint256.Int).Mul(newNetCollateral, curMaintenanceMargin)
-	newRisk := new(uint256.Int).Mul(curNetCollateral, newMaintenanceMargin)
+	curRisk := new(int256.Int).Mul(newNetCollateral, curMaintenanceMargin)
+	newRisk := new(int256.Int).Mul(curNetCollateral, newMaintenanceMargin)
 
 	// The subaccount is not well-collateralized, and the state transition leaves the subaccount in a
 	// "more-risky" state (collateral relative to margin requirements is decreasing).
@@ -1289,13 +1289,13 @@ func (k Keeper) GetNetCollateralAndMarginRequirements(
 	)
 }
 
-func (k Keeper) GetNetCollateralAndMarginRequirementsUint256(
+func (k Keeper) GetNetCollateralAndMarginRequirementsInt256(
 	ctx sdk.Context,
 	update types.Update,
 ) (
-	bigNetCollateral *uint256.Int,
-	bigInitialMargin *uint256.Int,
-	bigMaintenanceMargin *uint256.Int,
+	bigNetCollateral *int256.Int,
+	bigInitialMargin *int256.Int,
+	bigMaintenanceMargin *int256.Int,
 	err error,
 ) {
 	subaccount := k.GetSubaccount(ctx, update.SubaccountId)
@@ -1311,7 +1311,7 @@ func (k Keeper) GetNetCollateralAndMarginRequirementsUint256(
 		PerpetualUpdates:  update.PerpetualUpdates,
 	}
 
-	return k.internalGetNetCollateralAndMarginRequirementsUint256(
+	return k.internalGetNetCollateralAndMarginRequirementsInt256(
 		ctx,
 		settledUpdate,
 	)
@@ -1417,13 +1417,13 @@ func (k Keeper) internalGetNetCollateralAndMarginRequirements(
 	return bigNetCollateral, bigInitialMargin, bigMaintenanceMargin, nil
 }
 
-func (k Keeper) internalGetNetCollateralAndMarginRequirementsUint256(
+func (k Keeper) internalGetNetCollateralAndMarginRequirementsInt256(
 	ctx sdk.Context,
 	settledUpdate SettledUpdate,
 ) (
-	netCollateral *uint256.Int,
-	initialMargin *uint256.Int,
-	maintenanceMargin *uint256.Int,
+	netCollateral *int256.Int,
+	initialMargin *int256.Int,
+	maintenanceMargin *int256.Int,
 	err error,
 ) {
 	defer telemetry.ModuleMeasureSince(
@@ -1434,9 +1434,9 @@ func (k Keeper) internalGetNetCollateralAndMarginRequirementsUint256(
 	)
 
 	// Initialize return values.
-	netCollateral = uint256.NewInt(0)
-	initialMargin = uint256.NewInt(0)
-	maintenanceMargin = uint256.NewInt(0)
+	netCollateral = int256.NewInt(0)
+	initialMargin = int256.NewInt(0)
+	maintenanceMargin = int256.NewInt(0)
 
 	// Merge updates and assets.
 	assetSizes, err := applyUpdatesToPositions(
@@ -1444,7 +1444,7 @@ func (k Keeper) internalGetNetCollateralAndMarginRequirementsUint256(
 		settledUpdate.AssetUpdates,
 	)
 	if err != nil {
-		return uint256.NewInt(0), uint256.NewInt(0), uint256.NewInt(0), err
+		return int256.NewInt(0), int256.NewInt(0), int256.NewInt(0), err
 	}
 
 	// Merge updates and perpetuals.
@@ -1453,16 +1453,16 @@ func (k Keeper) internalGetNetCollateralAndMarginRequirementsUint256(
 		settledUpdate.PerpetualUpdates,
 	)
 	if err != nil {
-		return uint256.NewInt(0), uint256.NewInt(0), uint256.NewInt(0), err
+		return int256.NewInt(0), int256.NewInt(0), int256.NewInt(0), err
 	}
 
 	// The calculate function increments `netCollateral`, `initialMargin`, and `maintenanceMargin`
 	// given a `ProductKeeper` and a `PositionSize`.
 	calculate := func(pk types.ProductKeeper, size types.PositionSize) error {
 		id := size.GetId()
-		quantums := uint256.MustFromBig(size.GetBigQuantums())
+		quantums := int256.MustFromBig(size.GetBigQuantums())
 
-		netCollateralQuoteQuantums, err := pk.GetNetCollateralUint256(ctx, id, quantums)
+		netCollateralQuoteQuantums, err := pk.GetNetCollateralInt256(ctx, id, quantums)
 		if err != nil {
 			return err
 		}
@@ -1471,7 +1471,7 @@ func (k Keeper) internalGetNetCollateralAndMarginRequirementsUint256(
 
 		initialMarginRequirements,
 			maintenanceMarginRequirements,
-			err := pk.GetMarginRequirementsUint256(ctx, id, quantums)
+			err := pk.GetMarginRequirementsInt256(ctx, id, quantums)
 		if err != nil {
 			return err
 		}
@@ -1486,7 +1486,7 @@ func (k Keeper) internalGetNetCollateralAndMarginRequirementsUint256(
 	for _, size := range assetSizes {
 		err := calculate(k.assetsKeeper, size)
 		if err != nil {
-			return uint256.NewInt(0), uint256.NewInt(0), uint256.NewInt(0), err
+			return int256.NewInt(0), int256.NewInt(0), int256.NewInt(0), err
 		}
 	}
 
@@ -1495,7 +1495,7 @@ func (k Keeper) internalGetNetCollateralAndMarginRequirementsUint256(
 	for _, size := range perpetualSizes {
 		err := calculate(k.perpetualsKeeper, size)
 		if err != nil {
-			return uint256.NewInt(0), uint256.NewInt(0), uint256.NewInt(0), err
+			return int256.NewInt(0), int256.NewInt(0), int256.NewInt(0), err
 		}
 	}
 

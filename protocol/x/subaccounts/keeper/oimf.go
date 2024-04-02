@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/dydxprotocol/v4-chain/protocol/lib/int256"
 	perptypes "github.com/dydxprotocol/v4-chain/protocol/x/perpetuals/types"
 	"github.com/dydxprotocol/v4-chain/protocol/x/subaccounts/types"
-	"github.com/holiman/uint256"
 )
 
 // Helper function to compute the delta long for a single settled update on a perpetual.
@@ -45,11 +45,11 @@ func getDeltaLongFromSettledUpdate(
 	)
 }
 
-func getDeltaLongFromSettledUpdateUint256(
+func getDeltaLongFromSettledUpdateInt256(
 	u SettledUpdate,
 	updatedPerpId uint32,
 ) (
-	deltaLong *uint256.Int,
+	deltaLong *int256.Int,
 ) {
 	var perpPosition *types.PerpetualPosition
 	for _, p := range u.SettledSubaccount.PerpetualPositions {
@@ -59,10 +59,10 @@ func getDeltaLongFromSettledUpdateUint256(
 		}
 	}
 
-	prevQuantums := uint256.MustFromBig(perpPosition.GetBigQuantums())
-	afterQuantums := new(uint256.Int).Add(
+	prevQuantums := int256.MustFromBig(perpPosition.GetBigQuantums())
+	afterQuantums := new(int256.Int).Add(
 		prevQuantums,
-		uint256.MustFromBig(u.PerpetualUpdates[0].GetBigQuantums()),
+		int256.MustFromBig(u.PerpetualUpdates[0].GetBigQuantums()),
 	)
 
 	prevLong := prevQuantums // re-use pointer for efficiency
@@ -155,10 +155,10 @@ func GetDeltaOpenInterestFromUpdates(
 	}
 }
 
-func GetDeltaOpenInterestFromUpdatesUint256(
+func GetDeltaOpenInterestFromUpdatesInt256(
 	settledUpdates []SettledUpdate,
 	updateType types.UpdateType,
-) (ret *perptypes.OpenInterestDeltaUint256) {
+) (ret *perptypes.OpenInterestDeltaInt256) {
 	if updateType != types.Match {
 		return nil
 	}
@@ -205,9 +205,9 @@ func GetDeltaOpenInterestFromUpdatesUint256(
 		)
 	}
 
-	baseQuantumsDelta := uint256.NewInt(0)
+	baseQuantumsDelta := int256.NewInt(0)
 	for _, u := range settledUpdates {
-		deltaLong := getDeltaLongFromSettledUpdateUint256(u, updatedPerpId)
+		deltaLong := getDeltaLongFromSettledUpdateInt256(u, updatedPerpId)
 		baseQuantumsDelta.Add(
 			baseQuantumsDelta,
 			deltaLong,
@@ -218,7 +218,7 @@ func GetDeltaOpenInterestFromUpdatesUint256(
 		return nil
 	}
 
-	return &perptypes.OpenInterestDeltaUint256{
+	return &perptypes.OpenInterestDeltaInt256{
 		PerpetualId:  updatedPerpId,
 		BaseQuantums: baseQuantumsDelta,
 	}

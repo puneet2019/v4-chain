@@ -6,12 +6,12 @@ import (
 	"math/rand"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/dydxprotocol/v4-chain/protocol/lib/int256"
 	assettypes "github.com/dydxprotocol/v4-chain/protocol/x/assets/types"
 	blocktimetypes "github.com/dydxprotocol/v4-chain/protocol/x/blocktime/types"
 	perpetualsmoduletypes "github.com/dydxprotocol/v4-chain/protocol/x/perpetuals/types"
 	pricestypes "github.com/dydxprotocol/v4-chain/protocol/x/prices/types"
 	satypes "github.com/dydxprotocol/v4-chain/protocol/x/subaccounts/types"
-	"github.com/holiman/uint256"
 )
 
 type SubaccountsKeeper interface {
@@ -24,7 +24,7 @@ type SubaccountsKeeper interface {
 		successPerUpdate []satypes.UpdateResult,
 		err error,
 	)
-	CanUpdateSubaccountsUint256(
+	CanUpdateSubaccountsInt256(
 		ctx sdk.Context,
 		updates []satypes.Update,
 		updateType satypes.UpdateType,
@@ -42,13 +42,13 @@ type SubaccountsKeeper interface {
 		bigMaintenanceMargin *big.Int,
 		err error,
 	)
-	GetNetCollateralAndMarginRequirementsUint256(
+	GetNetCollateralAndMarginRequirementsInt256(
 		ctx sdk.Context,
 		update satypes.Update,
 	) (
-		bigNetCollateral *uint256.Int,
-		bigInitialMargin *uint256.Int,
-		bigMaintenanceMargin *uint256.Int,
+		bigNetCollateral *int256.Int,
+		bigInitialMargin *int256.Int,
+		bigMaintenanceMargin *int256.Int,
 		err error,
 	)
 	GetSubaccount(

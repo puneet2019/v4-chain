@@ -7,7 +7,7 @@ import (
 	errorsmod "cosmossdk.io/errors"
 
 	"github.com/dydxprotocol/v4-chain/protocol/lib"
-	"github.com/holiman/uint256"
+	"github.com/dydxprotocol/v4-chain/protocol/lib/int256"
 )
 
 // - Initial margin is less than or equal to 1.
@@ -180,11 +180,11 @@ func (liquidityTier LiquidityTier) GetInitialMarginQuoteQuantums(
 	return bigIMREffective
 }
 
-func (liquidityTier LiquidityTier) GetInitialMarginQuoteQuantumsUint256(
-	quoteQuantums *uint256.Int,
-	openInterestQuoteQuantums *uint256.Int,
-) *uint256.Int {
-	openInterestUpperCap := uint256.NewInt(liquidityTier.OpenInterestUpperCap)
+func (liquidityTier LiquidityTier) GetInitialMarginQuoteQuantumsInt256(
+	quoteQuantums *int256.Int,
+	openInterestQuoteQuantums *int256.Int,
+) *int256.Int {
+	openInterestUpperCap := int256.NewUnsignedInt(liquidityTier.OpenInterestUpperCap)
 
 	// If `open_interest` >= `open_interest_upper_cap` where `upper_cap` is non-zero,
 	// OIMF = 1.0 so return input quote quantums as the IMR.
@@ -197,8 +197,8 @@ func (liquidityTier LiquidityTier) GetInitialMarginQuoteQuantumsUint256(
 	// If `open_interest_upper_cap` is 0, OIMF is disabled。
 	// Or if `current_interest` <= `open_interest_lower_cap`, IMF is not scaled.
 	// In both cases, use base IMF as OIMF.
-	openInterestLowerCap := uint256.NewInt(liquidityTier.OpenInterestLowerCap)
-	baseImr := lib.MulPpmRoundUpUint256(quoteQuantums, liquidityTier.InitialMarginPpm)
+	openInterestLowerCap := int256.NewUnsignedInt(liquidityTier.OpenInterestLowerCap)
+	baseImr := new(int256.Int).MulPpmRoundUp(quoteQuantums, liquidityTier.InitialMarginPpm)
 	if liquidityTier.OpenInterestUpperCap == 0 || openInterestQuoteQuantums.Cmp(
 		openInterestLowerCap,
 	) <= 0 {
@@ -208,10 +208,10 @@ func (liquidityTier LiquidityTier) GetInitialMarginQuoteQuantumsUint256(
 
 	// If `open_interest_lower_cap` < `open_interest` <= `open_interest_upper_cap`, calculate the scaled OIMF.
 	// `Scaling Factor = (Open Notional - Lower Cap) / (Upper Cap - Lower Cap)`
-	additionalImr := new(uint256.Int)
+	additionalImr := new(int256.Int)
 	additionalImr.Mul(quoteQuantums, additionalImr.Sub(openInterestQuoteQuantums, openInterestLowerCap))
-	lib.DivRound(additionalImr, additionalImr, openInterestLowerCap.Sub(openInterestUpperCap, openInterestLowerCap), true)
-	additionalImr = lib.MulPpmRoundUpUint256(additionalImr, lib.OneMillion-liquidityTier.InitialMarginPpm)
+	additionalImr.DivRoundUp(additionalImr, openInterestLowerCap.Sub(openInterestUpperCap, openInterestLowerCap))
+	additionalImr.MulPpmRoundUp(additionalImr, lib.OneMillion-liquidityTier.InitialMarginPpm)
 	additionalImr = additionalImr.Add(baseImr, additionalImr)
 
 	// Return min(Effective IMR, Quote Quantums)

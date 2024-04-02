@@ -6,9 +6,9 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/dydxprotocol/v4-chain/protocol/lib/int256"
 	blocktimetypes "github.com/dydxprotocol/v4-chain/protocol/x/blocktime/types"
 	perptypes "github.com/dydxprotocol/v4-chain/protocol/x/perpetuals/types"
-	"github.com/holiman/uint256"
 )
 
 // ProductKeeper represents a generic interface for a keeper
@@ -22,12 +22,12 @@ type ProductKeeper interface {
 		bigNetCollateralQuoteQuantums *big.Int,
 		err error,
 	)
-	GetNetCollateralUint256(
+	GetNetCollateralInt256(
 		ctx sdk.Context,
 		id uint32,
-		bigQuantums *uint256.Int,
+		bigQuantums *int256.Int,
 	) (
-		bigNetCollateralQuoteQuantums *uint256.Int,
+		bigNetCollateralQuoteQuantums *int256.Int,
 		err error,
 	)
 	GetMarginRequirements(
@@ -39,13 +39,13 @@ type ProductKeeper interface {
 		bigMaintenanceMarginQuoteQuantums *big.Int,
 		err error,
 	)
-	GetMarginRequirementsUint256(
+	GetMarginRequirementsInt256(
 		ctx sdk.Context,
 		id uint32,
-		bigQuantums *uint256.Int,
+		bigQuantums *int256.Int,
 	) (
-		bigInitialMarginQuoteQuantums *uint256.Int,
-		bigMaintenanceMarginQuoteQuantums *uint256.Int,
+		bigInitialMarginQuoteQuantums *int256.Int,
+		bigMaintenanceMarginQuoteQuantums *int256.Int,
 		err error,
 	)
 	IsPositionUpdatable(
@@ -94,7 +94,7 @@ type PerpetualsKeeper interface {
 	GetInsuranceFundModuleAddress(ctx sdk.Context, perpetualId uint32) (sdk.AccAddress, error)
 	IsIsolatedPerpetual(ctx sdk.Context, perpetualId uint32) (bool, error)
 	ModifyOpenInterest(ctx sdk.Context, perpetualId uint32, bigQuantums *big.Int) error
-	ModifyOpenInterestUint256(ctx sdk.Context, perpetualId uint32, quantums *uint256.Int) error
+	ModifyOpenInterestInt256(ctx sdk.Context, perpetualId uint32, quantums *int256.Int) error
 }
 
 // BankKeeper defines the expected interface needed to retrieve account balances.
